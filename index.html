@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calculator</title>
+    <style>
+        /* ----- RESET & BODY ----- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+        }
+
+        /* ----- CALCULATOR CONTAINER ----- */
+        .calculator {
+            background: #1e293b;
+            border-radius: 32px;
+            padding: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7), inset 0 2px 4px rgba(255, 255, 255, 0.05);
+            width: 340px;
+        }
+
+        /* ----- DISPLAY ----- */
+        .display {
+            background: #0b1120;
+            border-radius: 20px;
+            padding: 20px 24px;
+            margin-bottom: 20px;
+            text-align: right;
+            box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.6);
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            word-wrap: break-word;
+            word-break: break-all;
+        }
+
+        .display .expression {
+            color: #94a3b8;
+            font-size: 1rem;
+            min-height: 28px;
+            transition: color 0.2s;
+        }
+
+        .display .result {
+            color: #f1f5f9;
+            font-size: 2.8rem;
+            font-weight: 600;
+            line-height: 1.2;
+            transition: color 0.2s;
+        }
+
+        .display .result.error {
+            color: #f87171;
+            font-size: 1.6rem;
+        }
+
+        /* ----- BUTTON GRID ----- */
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        /* ----- BUTTONS ----- */
+        .btn {
+            padding: 18px 0;
+            font-size: 1.4rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.08);
+            background: #334155;
+            color: #f1f5f9;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.15);
+            box-shadow: 0 6px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        /* Operator buttons */
+        .btn.operator {
+            background: #f59e0b;
+            color: #0f172a;
+        }
+
+        .btn.operator:hover {
+            background: #fbbf24;
+        }
+
+        /* Function buttons (AC, %, ±) */
+        .btn.function {
+            background: #475569;
+            color: #f1f5f9;
+        }
+
+        .btn.function:hover {
+            background: #64748b;
+        }
+
+        /* Equals button */
+        .btn.equals {
+            background: #3b82f6;
+            color: white;
+            box-shadow: 0 4px 0 #1d4ed8, inset 0 1px 2px rgba(255, 255, 255, 0.15);
+        }
+
+        .btn.equals:hover {
+            background: #60a5fa;
+        }
+
+        /* Span 2 columns */
+        .btn.span-two {
+            grid-column: span 2;
+        }
+
+        /* ----- RESPONSIVE ----- */
+        @media (max-width: 400px) {
+            .calculator {
+                width: 92vw;
+                padding: 16px;
+            }
+            .btn {
+                padding: 14px 0;
+                font-size: 1.2rem;
+            }
+            .display .result {
+                font-size: 2.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="calculator">
+        <!-- Display -->
+        <div class="display">
+            <div class="expression" id="expression"></div>
+            <div class="result" id="result">0</div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="buttons">
+
+            <!-- Row 1 -->
+            <button class="btn function" data-value="AC">AC</button>
+            <button class="btn function" data-value="±">±</button>
+            <button class="btn function" data-value="%">%</button>
+            <button class="btn operator" data-value="÷">÷</button>
+
+            <!-- Row 2 -->
+            <button class="btn" data-value="7">7</button>
+            <button class="btn" data-value="8">8</button>
+            <button class="btn" data-value="9">9</button>
+            <button class="btn operator" data-value="×">×</button>
+
+            <!-- Row 3 -->
+            <button class="btn" data-value="4">4</button>
+            <button class="btn" data-value="5">5</button>
+            <button class="btn" data-value="6">6</button>
+            <button class="btn operator" data-value="−">−</button>
+
+            <!-- Row 4 -->
+            <button class="btn" data-value="1">1</button>
+            <button class="btn" data-value="2">2</button>
+            <button class="btn" data-value="3">3</button>
+            <button class="btn operator" data-value="+">+</button>
+
+            <!-- Row 5 -->
+            <button class="btn span-two" data-value="0">0</button>
+            <button class="btn" data-value=".">.</button>
+            <button class="btn equals" data-value="=">=</button>
+
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ----- DOM ELEMENTS -----
+            const resultDisplay = document.getElementById('result');
+            const expressionDisplay = document.getElementById('expression');
+
+            // ----- STATE -----
+            let currentInput = '0';       // what's shown on screen
+            let previousInput = '';       // stored value before operator
+            let operator = null;          // current operator (+, −, ×, ÷)
+            let shouldResetInput = false; // flag to start fresh after operator
+            let justEvaluated = false;    // flag to handle chaining after =
+
+            // ----- HELPER: UPDATE DISPLAY -----
+            function updateDisplay() {
+                // Format currentInput with commas for readability (integer part only)
+                let displayValue = currentInput;
+                if (currentInput !== 'Error' && currentInput !== 'Infinity') {
+                    const parts = currentInput.split('.');
+                    const intPart = parts[0];
+                    const decPart = parts[1] || '';
+                    // Add commas to integer part if it's a valid number
+                    if (!isNaN(intPart) && intPart !== '') {
+                        const withCommas = parseInt(intPart, 10).toLocaleString('en-US');
+                        displayValue = decPart ? withCommas + '.' + decPart : withCommas;
+                    }
+                }
+                resultDisplay.textContent = displayValue;
+                // Show expression only if there's an operator and previous input
+                if (operator && previousInput) {
+                    const opSymbol = operator === '*' ? '×' :
+                                     operator === '/' ? '÷' :
+                                     operator === '-' ? '−' : operator;
+                    expressionDisplay.textContent = `${previousInput} ${opSymbol}`;
+                } else {
+                    expressionDisplay.textContent = '';
+                }
+                // Error styling
+                if (currentInput === 'Error' || currentInput === 'Infinity') {
+                    resultDisplay.classList.add('error');
+                } else {
+                    resultDisplay.classList.remove('error');
+                }
+            }
+
+            // ----- CORE: EVALUATE -----
+            function evaluate(a, op, b) {
+                const numA = parseFloat(a);
+                const numB = parseFloat(b);
+                if (isNaN(numA) || isNaN(numB)) return 'Error';
+
+                let result;
+                switch (op) {
+                    case '+': result = numA + numB; break;
+                    case '-': result = numA - numB; break;
+                    case '*': result = numA * numB; break;
+                    case '/':
+                        if (numB === 0) return 'Error';
+                        result = numA / numB;
+                        break;
+                    default: return 'Error';
+                }
+
+                // Handle floating point precision
+                if (typeof result === 'number' && !Number.isInteger(result)) {
+                    result = parseFloat(result.toPrecision(12));
+                }
+
+                if (!isFinite(result)) return 'Error';
+                return String(result);
+            }
+
+            // ----- INPUT: NUMBER -----
+            function inputDigit(digit) {
+                if (currentInput === 'Error' || currentInput === 'Infinity') {
+                    currentInput = '0';
+                    previousInput = '';
+                    operator = null;
+                    shouldResetInput = false;
+                    justEvaluated = false;
+                }
+
+                if (shouldResetInput) {
+                    currentInput = digit;
+                    shouldResetInput = false;
+                    justEvaluated = false;
+                } else {
+                    if (currentInput === '0' && digit !== '.') {
+                        currentInput = digit;
+                    } else {
+                        // Limit input length to prevent overflow
+                        if (currentInput.replace('-', '').replace('.', '').length >= 15) return;
+                        currentInput += digit;
+                    }
+                }
+                updateDisplay();
+            }
+
+            // ----- INPUT: DECIMAL -----
+            function inputDecimal() {
+                if (currentInput === 'Error' || currentInput === 'Infinity') {
+                    currentInput = '0.';
+                    previousInput = '';
+                    operator = null;
+                    shouldResetInput = false;
+                    justEvaluated = false;
+                    updateDisplay();
+                    return;
+                }
+
+                if (shouldResetInput) {
+                    currentInput = '0.';
+                    shouldResetInput = false;
+                    justEvaluated = false;
+                    updateDisplay();
+                    return;
+                }
+
+                if (!currentInput.includes('.')) {
+                    currentInput += '.';
+                }
+                updateDisplay();
+            }
+
+            // ----- INPUT: OPERATOR -----
+            function inputOperator(op) {
+                if (currentInput === 'Error' || currentInput === 'Infinity') {
+                    currentInput = '0';
+                    previousInput = '';
+                    operator = null;
+                    shouldResetInput = false;
+                    justEvaluated = false;
+                }
+
+                const current = currentInput;
+
+                // If there's already an operator and we're not resetting, chain calculation
+                if (operator && !shouldResetInput && !justEvaluated) {
+                    const result = evaluate(previousInput, operator, current);
+                    if (result === 'Error') {
+                        currentInput = 'Error';
+                        operator = null;
+                        previousInput = '';
+                        shouldResetInput = false;
+                        updateDisplay();
+                        return;
+                    }
+                    currentInput = result;
+                }
+
+                previousInput = currentInput;
+                operator = op;
+                shouldResetInput = true;
+                justEvaluated = false;
+                updateDisplay();
+            }
+
+            // ----- INPUT: EQUALS -----
+            function inputEquals() {
+                if (currentInput === 'Error' || currentInput === 'Infinity') {
+                    currentInput = '0';
+                    previousInput = '';
+                    operator = null;
+                    shouldResetInput = false;
+                    justEvaluated = false;
+                    updateDisplay();
+                    return;
+                }
+
+                if (!operator || shouldResetInput) {
+                    // If no operator or we just typed a number after operator, just show current
+                    justEvaluated = true;
+                    updateDisplay();
+                    return;
+                }
+
+                const result = evaluate(previousInput, operator, currentInput);
+                if (result === 'Error') {
+                    currentInput = 'Error';
+                    operator = null;
+                    previousInput = '';
+                    shouldResetInput = false;
+                    justEvaluated = false;
+                    updateDisplay();
+                    return;
+                }
+
+                currentInput = result;
+                previousInput = '';
+                operator = null;
+                shouldResetInput = true;
+                justEvaluated = true;
+                updateDisplay();
+            }
+
+            // ----- INPUT: PERCENTAGE -----
+            function inputPercentage() {
+                if (currentInput === 'Error' || currentInput === 'Infinity') {
+                    currentInput = '0';
+                    previousInput = '';
+                    operator = null;
+                    shouldResetInput = false;
+                    justEvaluated = false;
+                    updateDisplay();
+                    return;
+                }
+                const num = parseFloat(currentInput);
+                if (isNaN(num)) return;
+                const result = num / 100;
+                currentInput = String(parseFloat(result.toPrecision(12)));
+                updateDisplay();
+            }
+
+            // ----- INPUT: TOGGLE SIGN -----
+            function inputToggleSign() {
+                if (currentInput === 'Error' || currentInput === 'Infinity') {
+                    currentInput = '0';
+                    previousInput = '';
+                    operator = null;
+                    shouldResetInput = false;
+                    justEvaluated = false;
+                    updateDisplay();
+                    return;
+                }
+                if (currentInput === '0') return;
+                if (currentInput.startsWith('-')) {
+                    currentInput = currentInput.slice(1);
+                } else {
+                    currentInput = '-' + currentInput;
+                }
+                updateDisplay();
+            }
+
+            // ----- INPUT: CLEAR (AC) -----
+            function inputClear() {
+                currentInput = '0';
+                previousInput = '';
+                operator = null;
+                shouldResetInput = false;
+                justEvaluated = false;
+                updateDisplay();
+            }
+
+            // ----- KEYBOARD SUPPORT -----
+            function handleKeyboard(e) {
+                const key = e.key;
+
+                if (key >= '0' && key <= '9') {
+                    e.preventDefault();
+                    inputDigit(key);
+                    return;
+                }
+
+                switch (key) {
+                    case '.':
+                        e.preventDefault();
+                        inputDecimal();
+                        break;
+                    case '+':
+                        e.preventDefault();
+                        inputOperator('+');
+                        break;
+                    case '-':
+                        e.preventDefault();
+                        inputOperator('-');
+                        break;
+                    case '*':
+                        e.preventDefault();
+                        inputOperator('*');
+                        break;
+                    case '/':
+                        e.preventDefault();
+                        inputOperator('/');
+                        break;
+                    case 'Enter':
+                    case '=':
+                        e.preventDefault();
+                        inputEquals();
+                        break;
+                    case 'Backspace':
+                        e.preventDefault();
+                        if (currentInput.length > 1 && currentInput !== 'Error' && currentInput !== 'Infinity') {
+                            currentInput = currentInput.slice(0, -1);
+                            if (currentInput === '-' || currentInput === '') currentInput = '0';
+                            updateDisplay();
+                        } else if (currentInput !== 'Error' && currentInput !== 'Infinity') {
+                            currentInput = '0';
+                            updateDisplay();
+                        }
+                        break;
+                    case 'Escape':
+                        e.preventDefault();
+                        inputClear();
+                        break;
+                    case '%':
+                        e.preventDefault();
+                        inputPercentage();
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            // ----- BUTTON CLICK HANDLER -----
+            function handleButtonClick(e) {
+                const btn = e.currentTarget;
+                const value = btn.dataset.value;
+
+                if (!value) return;
+
+                switch (value) {
+                    case 'AC':
+                        inputClear();
+                        break;
+                    case '±':
+                        inputToggleSign();
+                        break;
+                    case '%':
+                        inputPercentage();
+                        break;
+                    case '=':
+                        inputEquals();
+                        break;
+                    case '+':
+                        inputOperator('+');
+                        break;
+                    case '−':
+                        inputOperator('-');
+                        break;
+                    case '×':
+                        inputOperator('*');
+                        break;
+                    case '÷':
+                        inputOperator('/');
+                        break;
+                    case '.':
+                        inputDecimal();
+                        break;
+                    default:
+                        // digits 0-9
+                        if (/^[0-9]$/.test(value)) {
+                            inputDigit(value);
+                        }
+                        break;
+                }
+            }
+
+            // ----- ATTACH EVENTS TO BUTTONS -----
+            const buttons = document.querySelectorAll('.btn');
+            buttons.forEach(btn => {
+                btn.addEventListener('click', handleButtonClick);
+            });
+
+            // ----- KEYBOARD EVENTS -----
+            document.addEventListener('keydown', handleKeyboard);
+
+            // ----- INIT -----
+            updateDisplay();
+
+        })();
+    </script>
+
+</body>
+</html>
